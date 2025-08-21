@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista de Gastos - Hello Kitty ❤️</title>
+  <style>
+    body { font-family: 'Quicksand', sans-serif; color: #a30059; margin: 0; padding: 0; overflow-x: hidden; position: relative; }
+    body::before {
+      content: ""; position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: url('https://i.pinimg.com/736x/30/3e/44/303e44adc333a5ea804f00ac4256a85c.jpg') no-repeat top center;
+      background-size: contain; z-index: -1;
+    }
+    .contenido { margin-top: 300px; padding: 20px; }
+    input, button {
+      padding: 10px; margin: 5px;
+      border: 2px solid #ffb6c1; border-radius: 10px;
+      font-size: 1em; background: #fffafc;
+    }
+    button { background: #ffccdd; color: #800040; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #ffc0cb; }
+    .formulario, form, .tabla, .resumen {
+      background: rgba(255,250,252,0.92); border: 2px solid #ffb6c1; border-radius: 15px;
+      padding: 15px; margin-bottom: 20px; box-shadow: 2px 2px 10px rgba(255,192,203,0.3);
+      position: relative; z-index: 1;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td {
+      padding: 10px; border: 1px solid #ffb6c1;
+      text-align: left; background: rgba(255,240,245,0.9);
+    }
+    th { background: #ffe6f2; color: #d63384; }
+    .resumen p { font-size: 1.1em; margin: 8px 0; }
+    #alertaPago { color: red; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="contenido">
+    <div class="formulario">
+      <label for="dineroNeto">💰 Dinero neto disponible: $</label>
+      <input type="number" id="dineroNeto" placeholder="Ej. 1500" required>
+      <button onclick="actualizarResumen()">Actualizar resumen</button>
+    </div>
+
+    <form id="formularioGasto">
+      <input type="text" id="nombre" placeholder="Nombre del gasto" required>
+      <input type="number" id="monto" placeholder="Monto ($)" required>
+      <input type="date" id="fecha" required>
+      <button type="submit">Agregar gasto 🎀</button>
+    </form>
+
+    <div class="tabla">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Monto</th><th>Fecha de pago</th></tr>
+        </thead>
+        <tbody id="listaGastos"></tbody>
+      </table>
+    </div>
+
+    <div class="resumen" id="resumenFinanciero">
+      <p><strong>Total de gastos:</strong> $<span id="totalGastos">0.00</span></p>
+      <p><strong>Dinero restante:</strong> $<span id="dineroRestante">0.00</span></p>
+      <p><strong>🎀 Recomendación:</strong> <span id="recomendacion">Agrega gastos para ver recomendaciones.</span></p>
+      <p id="alertaPago"></p>
+      <button onclick="compartirResumen()">📤 Compartir por WhatsApp</button>
+    </div>
+  </div>
+
+  <script>
+    const f = document.getElementById('formularioGasto'),
+          l = document.getElementById('listaGastos'),
+          tg = document.getElementById('totalGastos'),
+          dr = document.getElementById('dineroRestante'),
+          r = document.getElementById('recomendacion'),
+          dn = document.getElementById('dineroNeto'),
+          alerta = document.getElementById('alertaPago');
+
+    let gastos = [], dineroNeto = 0;
+
+    // 🔁 Cargar al inicio
+    window.onload = () => {
+      const datos = localStorage.getItem('gastosApp');
+      if (datos) {
+        const { gastos: g, dineroNeto: d } = JSON.parse(datos);
+        gastos = g || []; dineroNeto = d || 0;
+        dn.value = dineroNeto;
+        mostrarGastos(); actualizarResumen();
+      }
+      pedirPermisoNotif(); revisarPagosProximos();
+    };
+
+    // 📤 Guardar
+    function guardarDatos() {
+      localStorage.setItem('gastosApp', JSON.stringify({ gastos, dineroNeto }));
+    }
+
+    f.addEventListener('submit', e => {
+      e.preventDefault();
+      const n = document.getElementById('nombre').value,
+            m = parseFloat(document.getElementById('monto').value),
+            d = document.getElementById('fecha').value;
+      gastos.push({ nombre: n, monto: m, fecha: d });
+      gastos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+      mostrarGastos(); actualizarResumen(); guardarDatos(); f.reset();
+    });
+
+    function mostrarGastos() {
+      l.innerHTML = '';
+      gastos.forEach(g =>
+        l.innerHTML += `<tr><td>${g.nombre}</td><td>$${g.monto.toFixed(2)}</td><td>${g.fecha}</td></tr>`
+      );
+    }
+
+    function actualizarResumen() {
+      dineroNeto = parseFloat(dn.value) || 0;
+      const total = gastos.reduce((a, g) => a + g.monto, 0),
+            restante = dineroNeto - total;
+      tg.textContent = total.toFixed(2);
+      dr.textContent = restante.toFixed(2);
+      if (!gastos.length) {
+        r.textContent = "Agrega gastos para ver recomendaciones."; return;
+      }
+      const prior = gastos.reduce((min, g) => new Date(g.fecha) < new Date(min.fecha) ? g : min);
+      r.textContent = `Prioriza pagar "${prior.nombre}" de $${prior.monto.toFixed(2)} antes del ${prior.fecha}.`;
+      guardarDatos();
+    }
+
+    // ✅ Compartir resumen
+    function compartirResumen() {
+      const mensaje = `📋 *Resumen de gastos Hello Kitty*:\n\n💸 Total: $${tg.textContent}\n💰 Restante: $${dr.textContent}\n🎀 ${r.textContent}`;
+      const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+      window.open(url, '_blank');
+    }
+
+    // ✅ Revisión de pagos próximos (7 días)
+    function revisarPagosProximos() {
+      const hoy = new Date(), sieteDias = new Date();
+      sieteDias.setDate(hoy.getDate() + 7);
+      const proximos = gastos.filter(g => {
+        const f = new Date(g.fecha);
+        return f >= hoy && f <= sieteDias;
+      });
+
+      if (proximos.length) {
+        const nombres = proximos.map(g => `"${g.nombre}" el ${g.fecha}`).join(', ');
+        alerta.textContent = `⚠️ Pagos próximos en 7 días: ${nombres}`;
+        enviarNotificacion("Pagos próximos", nombres);
+      }
+    }
+
+    // ✅ Permiso de notificación
+    function pedirPermisoNotif() {
+      if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+      }
+    }
+
+    // ✅ Enviar notificación
+    function enviarNotificacion(titulo, cuerpo) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(titulo, {
+          body: cuerpo,
+          icon: "https://i.pinimg.com/originals/6a/30/42/6a3042f3c8ed94a3cf20d7c52aa6c47e.png"
+        });
+      }
+    }
+  </script>
+</body>
+</html>
