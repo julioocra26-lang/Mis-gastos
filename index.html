@@ -2,37 +2,92 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lista de Gastos - Hello Kitty ❤️</title>
   <style>
-    body { font-family: 'Quicksand', sans-serif; color: #a30059; margin: 0; padding: 0; overflow-x: hidden; position: relative; }
+    body {
+      font-family: 'Quicksand', sans-serif;
+      color: #a30059;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      position: relative;
+    }
     body::before {
-      content: ""; position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       background: url('https://i.pinimg.com/736x/30/3e/44/303e44adc333a5ea804f00ac4256a85c.jpg') no-repeat top center;
-      background-size: contain; z-index: -1;
+      background-size: contain;
+      z-index: -1;
     }
-    .contenido { margin-top: 300px; padding: 20px; }
+    .contenido {
+      margin-top: 300px;
+      padding: 20px;
+    }
     input, button, select {
-      padding: 10px; margin: 5px;
-      border: 2px solid #ffb6c1; border-radius: 10px;
-      font-size: 1em; background: #fffafc;
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 2px solid #ffb6c1;
+      border-radius: 10px;
+      font-size: 16px;
+      background: #fffafc;
+      box-sizing: border-box;
     }
-    button { background: #ffccdd; color: #800040; cursor: pointer; transition: 0.3s; }
-    button:hover { background: #ffc0cb; }
+    button {
+      background: #ffccdd;
+      color: #800040;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #ffc0cb;
+    }
     .formulario, form, .tabla, .resumen {
-      background: rgba(255,250,252,0.92); border: 2px solid #ffb6c1; border-radius: 15px;
-      padding: 15px; margin-bottom: 20px; box-shadow: 2px 2px 10px rgba(255,192,203,0.3);
-      position: relative; z-index: 1;
+      background: rgba(255,250,252,0.92);
+      border: 2px solid #ffb6c1;
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 2px 2px 10px rgba(255,192,203,0.3);
+      position: relative;
+      z-index: 1;
     }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .tabla {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      min-width: 600px;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
     th, td {
-      padding: 10px; border: 1px solid #ffb6c1;
-      text-align: left; background: rgba(255,240,245,0.9);
+      padding: 10px;
+      border: 1px solid #ffb6c1;
+      text-align: left;
+      background: rgba(255,240,245,0.9);
     }
-    th { background: #ffe6f2; color: #d63384; }
-    .resumen p { font-size: 1.1em; margin: 8px 0; }
-    #alertaPago { color: red; font-weight: bold; }
-    .pagado { text-decoration: line-through; color: #888; }
+    th {
+      background: #ffe6f2;
+      color: #d63384;
+    }
+    .resumen p {
+      font-size: 1.1em;
+      margin: 8px 0;
+    }
+    #alertaPago {
+      color: red;
+      font-weight: bold;
+    }
+    .pagado {
+      text-decoration: line-through;
+      color: #888;
+    }
     .etiqueta-recurrente {
       background-color: #ffc0cb;
       color: #a30059;
@@ -40,6 +95,12 @@
       padding: 2px 6px;
       font-size: 0.8em;
       margin-left: 5px;
+    }
+    @media (max-width: 768px) {
+      .contenido {
+        margin-top: 100px;
+        padding: 10px;
+      }
     }
   </style>
 </head>
@@ -50,33 +111,26 @@
       <input type="number" id="dineroNeto" placeholder="Ej. 1500" required>
       <button onclick="actualizarResumen()">Actualizar resumen</button>
     </div>
-
     <form id="formularioGasto">
       <input type="text" id="nombre" placeholder="Nombre del gasto" required>
       <input type="number" id="monto" placeholder="Monto ($)" required>
       <input type="date" id="fecha" required>
-      <label>
-        <input type="checkbox" id="esRecurrente"> ¿Es un pago recurrente?
-      </label>
-      <select id="frecuencia" style="display: none;">
+      <label><input type="checkbox" id="esRecurrente"> ¿Es un pago recurrente?</label>
+      <select id="frecuencia" style="display:none;">
         <option value="diario">Diario</option>
         <option value="semanal">Semanal</option>
         <option value="mensual">Mensual</option>
       </select>
       <button type="submit">Agregar gasto 🎀</button>
     </form>
-
     <div class="tabla">
       <table>
         <thead>
-          <tr>
-            <th>Nombre</th><th>Monto</th><th>Fecha</th><th>¿Pagado?</th><th>Acción</th>
-          </tr>
+          <tr><th>Nombre</th><th>Monto</th><th>Fecha</th><th>¿Pagado?</th><th>Acción</th></tr>
         </thead>
         <tbody id="listaGastos"></tbody>
       </table>
     </div>
-
     <div class="resumen" id="resumenFinanciero">
       <p><strong>Total de gastos:</strong> $<span id="totalGastos">0.00</span></p>
       <p><strong>Dinero restante:</strong> $<span id="dineroRestante">0.00</span></p>
@@ -85,18 +139,15 @@
       <button onclick="compartirResumen()">📤 Compartir por WhatsApp</button>
     </div>
   </div>
-
   <script>
     const f = document.getElementById('formularioGasto'),
-          l = document.getElementById('listaGastos'),
-          tg = document.getElementById('totalGastos'),
-          dr = document.getElementById('dineroRestante'),
-          r = document.getElementById('recomendacion'),
-          dn = document.getElementById('dineroNeto'),
-          alerta = document.getElementById('alertaPago');
-
+      l = document.getElementById('listaGastos'),
+      tg = document.getElementById('totalGastos'),
+      dr = document.getElementById('dineroRestante'),
+      r = document.getElementById('recomendacion'),
+      dn = document.getElementById('dineroNeto'),
+      alerta = document.getElementById('alertaPago');
     let gastos = [], dineroNeto = 0;
-
     window.onload = () => {
       const datos = localStorage.getItem('gastosApp');
       if (datos) {
@@ -107,22 +158,15 @@
       }
       pedirPermisoNotif(); revisarPagosProximos();
     };
-
-    function guardarDatos() {
-      localStorage.setItem('gastosApp', JSON.stringify({ gastos, dineroNeto }));
-    }
-
     f.addEventListener('submit', e => {
       e.preventDefault();
       const n = document.getElementById('nombre').value,
-            m = parseFloat(document.getElementById('monto').value),
-            d = document.getElementById('fecha').value,
-            esRec = document.getElementById('esRecurrente').checked,
-            freq = document.getElementById('frecuencia').value;
-
-      const baseGasto = { nombre: n, monto: m, fecha: d, pagado: false, recurrente: esRec, frecuencia: esRec ? freq : null };
-      const nuevosGastos = [baseGasto];
-
+        m = parseFloat(document.getElementById('monto').value),
+        d = document.getElementById('fecha').value,
+        esRec = document.getElementById('esRecurrente').checked,
+        freq = document.getElementById('frecuencia').value;
+      const baseGasto = { nombre: n, monto: m, fecha: d, pagado: false, recurrente: esRec, frecuencia: esRec ? freq : null },
+        nuevosGastos = [baseGasto];
       if (esRec) {
         let fechaBase = new Date(d);
         for (let i = 1; i <= 5; i++) {
@@ -130,54 +174,34 @@
           if (freq === 'diario') nuevaFecha.setDate(fechaBase.getDate() + i);
           if (freq === 'semanal') nuevaFecha.setDate(fechaBase.getDate() + i * 7);
           if (freq === 'mensual') nuevaFecha.setMonth(fechaBase.getMonth() + i);
-          nuevosGastos.push({
-            nombre: n,
-            monto: m,
-            fecha: nuevaFecha.toISOString().split('T')[0],
-            pagado: false,
-            recurrente: true,
-            frecuencia: freq
-          });
+          nuevosGastos.push({ nombre: n, monto: m, fecha: nuevaFecha.toISOString().split('T')[0], pagado: false, recurrente: true, frecuencia: freq });
         }
       }
-
       gastos.push(...nuevosGastos);
       gastos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
       mostrarGastos(); actualizarResumen(); guardarDatos(); f.reset();
       document.getElementById('frecuencia').style.display = 'none';
     });
-
     function mostrarGastos() {
       l.innerHTML = '';
       gastos.forEach((g, i) => {
         const etiqueta = g.recurrente ? `<span class="etiqueta-recurrente">🌸 ${g.frecuencia}</span>` : '';
-        l.innerHTML += `
-          <tr class="${g.pagado ? 'pagado' : ''}">
-            <td>${g.nombre} ${etiqueta}</td>
-            <td>$${g.monto.toFixed(2)}</td>
-            <td>${g.fecha}</td>
-            <td><input type="checkbox" ${g.pagado ? 'checked' : ''} onchange="togglePagado(${i}, this)"></td>
-            <td><button onclick="eliminarGasto(${i})">Eliminar</button></td>
-          </tr>`;
+        l.innerHTML += `<tr class="${g.pagado ? 'pagado' : ''}"><td>${g.nombre} ${etiqueta}</td><td>$${g.monto.toFixed(2)}</td><td>${g.fecha}</td><td><input type="checkbox" ${g.pagado ? 'checked' : ''} onchange="togglePagado(${i}, this)"></td><td><button onclick="eliminarGasto(${i})">Eliminar</button></td></tr>`;
       });
     }
-
-    function togglePagado(index, checkbox) {
-      gastos[index].pagado = checkbox.checked;
+    function togglePagado(i, c) {
+      gastos[i].pagado = c.checked;
       mostrarGastos(); actualizarResumen(); guardarDatos();
     }
-
-    function eliminarGasto(index) {
+    function eliminarGasto(i) {
       if (confirm("¿Seguro que quieres eliminar este gasto?")) {
-        gastos.splice(index, 1);
+        gastos.splice(i, 1);
         mostrarGastos(); actualizarResumen(); guardarDatos();
       }
     }
-
     function actualizarResumen() {
       dineroNeto = parseFloat(dn.value) || 0;
-      const total = gastos.reduce((a, g) => a + g.monto, 0),
-            restante = dineroNeto - total;
+      const total = gastos.reduce((a, g) => a + g.monto, 0), restante = dineroNeto - total;
       tg.textContent = total.toFixed(2);
       dr.textContent = restante.toFixed(2);
       if (!gastos.length) {
@@ -188,18 +212,16 @@
       if (sinPagar.length) {
         const prior = sinPagar.reduce((min, g) => new Date(g.fecha) < new Date(min.fecha) ? g : min);
         r.textContent = `Prioriza pagar "${prior.nombre}" de $${prior.monto.toFixed(2)} antes del ${prior.fecha}.`;
-      } else {
-        r.textContent = "🎉 ¡Todos los gastos han sido pagados!";
-      }
+      } else r.textContent = "🎉 ¡Todos los gastos han sido pagados!";
       guardarDatos();
     }
-
     function compartirResumen() {
-      const mensaje = `📋 *Resumen de gastos Hello Kitty*:\n\n💸 Total: $${tg.textContent}\n💰 Restante: $${dr.textContent}\n🎀 ${r.textContent}`;
-      const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
-      window.open(url, '_blank');
+      const msg = `📋 *Resumen de gastos Hello Kitty*:\n\n💸 Total: $${tg.textContent}\n💰 Restante: $${dr.textContent}\n🎀 ${r.textContent}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     }
-
+    function guardarDatos() {
+      localStorage.setItem('gastosApp', JSON.stringify({ gastos, dineroNeto }));
+    }
     function revisarPagosProximos() {
       const hoy = new Date(), sieteDias = new Date();
       sieteDias.setDate(hoy.getDate() + 7);
@@ -213,25 +235,16 @@
         enviarNotificacion("Pagos próximos", nombres);
       }
     }
-
     function pedirPermisoNotif() {
-      if ("Notification" in window && Notification.permission !== "granted") {
-        Notification.requestPermission();
-      }
+      if ("Notification" in window && Notification.permission !== "granted") Notification.requestPermission();
     }
-
-    function enviarNotificacion(titulo, cuerpo) {
+    function enviarNotificacion(t, c) {
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification(titulo, {
-          body: cuerpo,
-          icon: "https://i.pinimg.com/originals/6a/30/42/6a3042f3c8ed94a3cf20d7c52aa6c47e.png"
-        });
+        new Notification(t, { body: c, icon: "https://i.pinimg.com/originals/6a/30/42/6a3042f3c8ed94a3cf20d7c52aa6c47e.png" });
       }
     }
-
-    document.getElementById('esRecurrente').addEventListener('change', function() {
-      const freq = document.getElementById('frecuencia');
-      freq.style.display = this.checked ? 'inline-block' : 'none';
+    document.getElementById('esRecurrente').addEventListener('change', function () {
+      document.getElementById('frecuencia').style.display = this.checked ? 'inline-block' : 'none';
     });
   </script>
 </body>
