@@ -32,6 +32,7 @@
     th { background: #ffe6f2; color: #d63384; }
     .resumen p { font-size: 1.1em; margin: 8px 0; }
     #alertaPago { color: red; font-weight: bold; }
+    .pagado { text-decoration: line-through; color: #888; }
   </style>
 </head>
 <body>
@@ -52,7 +53,9 @@
     <div class="tabla">
       <table>
         <thead>
-          <tr><th>Nombre</th><th>Monto</th><th>Fecha de pago</th></tr>
+          <tr>
+            <th>Nombre</th><th>Monto</th><th>Fecha</th><th>¿Pagado?</th><th>Acción</th>
+          </tr>
         </thead>
         <tbody id="listaGastos"></tbody>
       </table>
@@ -78,7 +81,6 @@
 
     let gastos = [], dineroNeto = 0;
 
-    // 🔁 Cargar al inicio
     window.onload = () => {
       const datos = localStorage.getItem('gastosApp');
       if (datos) {
@@ -90,7 +92,6 @@
       pedirPermisoNotif(); revisarPagosProximos();
     };
 
-    // 📤 Guardar
     function guardarDatos() {
       localStorage.setItem('gastosApp', JSON.stringify({ gastos, dineroNeto }));
     }
@@ -100,16 +101,35 @@
       const n = document.getElementById('nombre').value,
             m = parseFloat(document.getElementById('monto').value),
             d = document.getElementById('fecha').value;
-      gastos.push({ nombre: n, monto: m, fecha: d });
+      gastos.push({ nombre: n, monto: m, fecha: d, pagado: false });
       gastos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
       mostrarGastos(); actualizarResumen(); guardarDatos(); f.reset();
     });
 
     function mostrarGastos() {
       l.innerHTML = '';
-      gastos.forEach(g =>
-        l.innerHTML += `<tr><td>${g.nombre}</td><td>$${g.monto.toFixed(2)}</td><td>${g.fecha}</td></tr>`
-      );
+      gastos.forEach((g, i) => {
+        l.innerHTML += `
+          <tr class="${g.pagado ? 'pagado' : ''}">
+            <td>${g.nombre}</td>
+            <td>$${g.monto.toFixed(2)}</td>
+            <td>${g.fecha}</td>
+            <td><input type="checkbox" ${g.pagado ? 'checked' : ''} onchange="togglePagado(${i}, this)"></td>
+            <td><button onclick="eliminarGasto(${i})">Eliminar</button></td>
+          </tr>`;
+      });
+    }
+
+    function togglePagado(index, checkbox) {
+      gastos[index].pagado = checkbox.checked;
+      mostrarGastos(); actualizarResumen(); guardarDatos();
+    }
+
+    function eliminarGasto(index) {
+      if (confirm("¿Seguro que quieres eliminar este gasto?")) {
+        gastos.splice(index, 1);
+        mostrarGastos(); actualizarResumen(); guardarDatos();
+      }
     }
 
     function actualizarResumen() {
@@ -119,29 +139,32 @@
       tg.textContent = total.toFixed(2);
       dr.textContent = restante.toFixed(2);
       if (!gastos.length) {
-        r.textContent = "Agrega gastos para ver recomendaciones."; return;
+        r.textContent = "Agrega gastos para ver recomendaciones.";
+        return;
       }
-      const prior = gastos.reduce((min, g) => new Date(g.fecha) < new Date(min.fecha) ? g : min);
-      r.textContent = `Prioriza pagar "${prior.nombre}" de $${prior.monto.toFixed(2)} antes del ${prior.fecha}.`;
+      const sinPagar = gastos.filter(g => !g.pagado);
+      if (sinPagar.length) {
+        const prior = sinPagar.reduce((min, g) => new Date(g.fecha) < new Date(min.fecha) ? g : min);
+        r.textContent = `Prioriza pagar "${prior.nombre}" de $${prior.monto.toFixed(2)} antes del ${prior.fecha}.`;
+      } else {
+        r.textContent = "🎉 ¡Todos los gastos han sido pagados!";
+      }
       guardarDatos();
     }
 
-    // ✅ Compartir resumen
     function compartirResumen() {
       const mensaje = `📋 *Resumen de gastos Hello Kitty*:\n\n💸 Total: $${tg.textContent}\n💰 Restante: $${dr.textContent}\n🎀 ${r.textContent}`;
       const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
       window.open(url, '_blank');
     }
 
-    // ✅ Revisión de pagos próximos (7 días)
     function revisarPagosProximos() {
       const hoy = new Date(), sieteDias = new Date();
       sieteDias.setDate(hoy.getDate() + 7);
       const proximos = gastos.filter(g => {
         const f = new Date(g.fecha);
-        return f >= hoy && f <= sieteDias;
+        return f >= hoy && f <= sieteDias && !g.pagado;
       });
-
       if (proximos.length) {
         const nombres = proximos.map(g => `"${g.nombre}" el ${g.fecha}`).join(', ');
         alerta.textContent = `⚠️ Pagos próximos en 7 días: ${nombres}`;
@@ -149,14 +172,12 @@
       }
     }
 
-    // ✅ Permiso de notificación
     function pedirPermisoNotif() {
       if ("Notification" in window && Notification.permission !== "granted") {
         Notification.requestPermission();
       }
     }
 
-    // ✅ Enviar notificación
     function enviarNotificacion(titulo, cuerpo) {
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification(titulo, {
