@@ -12,7 +12,7 @@
       background-size: contain; z-index: -1;
     }
     .contenido { margin-top: 300px; padding: 20px; }
-    input, button {
+    input, button, select {
       padding: 10px; margin: 5px;
       border: 2px solid #ffb6c1; border-radius: 10px;
       font-size: 1em; background: #fffafc;
@@ -33,6 +33,14 @@
     .resumen p { font-size: 1.1em; margin: 8px 0; }
     #alertaPago { color: red; font-weight: bold; }
     .pagado { text-decoration: line-through; color: #888; }
+    .etiqueta-recurrente {
+      background-color: #ffc0cb;
+      color: #a30059;
+      border-radius: 8px;
+      padding: 2px 6px;
+      font-size: 0.8em;
+      margin-left: 5px;
+    }
   </style>
 </head>
 <body>
@@ -47,6 +55,14 @@
       <input type="text" id="nombre" placeholder="Nombre del gasto" required>
       <input type="number" id="monto" placeholder="Monto ($)" required>
       <input type="date" id="fecha" required>
+      <label>
+        <input type="checkbox" id="esRecurrente"> ¿Es un pago recurrente?
+      </label>
+      <select id="frecuencia" style="display: none;">
+        <option value="diario">Diario</option>
+        <option value="semanal">Semanal</option>
+        <option value="mensual">Mensual</option>
+      </select>
       <button type="submit">Agregar gasto 🎀</button>
     </form>
 
@@ -100,18 +116,44 @@
       e.preventDefault();
       const n = document.getElementById('nombre').value,
             m = parseFloat(document.getElementById('monto').value),
-            d = document.getElementById('fecha').value;
-      gastos.push({ nombre: n, monto: m, fecha: d, pagado: false });
+            d = document.getElementById('fecha').value,
+            esRec = document.getElementById('esRecurrente').checked,
+            freq = document.getElementById('frecuencia').value;
+
+      const baseGasto = { nombre: n, monto: m, fecha: d, pagado: false, recurrente: esRec, frecuencia: esRec ? freq : null };
+      const nuevosGastos = [baseGasto];
+
+      if (esRec) {
+        let fechaBase = new Date(d);
+        for (let i = 1; i <= 5; i++) {
+          let nuevaFecha = new Date(fechaBase);
+          if (freq === 'diario') nuevaFecha.setDate(fechaBase.getDate() + i);
+          if (freq === 'semanal') nuevaFecha.setDate(fechaBase.getDate() + i * 7);
+          if (freq === 'mensual') nuevaFecha.setMonth(fechaBase.getMonth() + i);
+          nuevosGastos.push({
+            nombre: n,
+            monto: m,
+            fecha: nuevaFecha.toISOString().split('T')[0],
+            pagado: false,
+            recurrente: true,
+            frecuencia: freq
+          });
+        }
+      }
+
+      gastos.push(...nuevosGastos);
       gastos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
       mostrarGastos(); actualizarResumen(); guardarDatos(); f.reset();
+      document.getElementById('frecuencia').style.display = 'none';
     });
 
     function mostrarGastos() {
       l.innerHTML = '';
       gastos.forEach((g, i) => {
+        const etiqueta = g.recurrente ? `<span class="etiqueta-recurrente">🌸 ${g.frecuencia}</span>` : '';
         l.innerHTML += `
           <tr class="${g.pagado ? 'pagado' : ''}">
-            <td>${g.nombre}</td>
+            <td>${g.nombre} ${etiqueta}</td>
             <td>$${g.monto.toFixed(2)}</td>
             <td>${g.fecha}</td>
             <td><input type="checkbox" ${g.pagado ? 'checked' : ''} onchange="togglePagado(${i}, this)"></td>
@@ -186,6 +228,11 @@
         });
       }
     }
+
+    document.getElementById('esRecurrente').addEventListener('change', function() {
+      const freq = document.getElementById('frecuencia');
+      freq.style.display = this.checked ? 'inline-block' : 'none';
+    });
   </script>
 </body>
 </html>
